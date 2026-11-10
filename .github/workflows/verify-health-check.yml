@@ -1,0 +1,17 @@
+name: verify-health-check
+on:
+  push:
+    branches: [verify-health-check]
+permissions:
+  contents: read
+jobs:
+  mock:
+    runs-on: ubuntu-24.04
+    steps:
+      - id: gpu
+        uses: pantheongpu/gpu-health-check@1913a4746f390e2ae8849173c127954e154d9e5e # v0.1.1
+        with:
+          platform: mock
+          duration: 5
+          fail-on: never
+      - run: echo "verdict=${{ steps.gpu.outputs.verdict }} platform=${{ steps.gpu.outputs.platform }}"
