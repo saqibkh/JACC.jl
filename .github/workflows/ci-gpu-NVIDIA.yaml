@@ -71,6 +71,17 @@ jobs:
           repository: ${{fromJson(steps.request.outputs.data).head.repo.full_name}}
           ref: ${{steps.pr_data.outputs.branch}}
 
+      # Optional: stress-test the GPU before trusting it (off unless the repository
+      # variable GPU_HEALTH_CHECK is 'true'). Only a faulty card or a failed check
+      # is reported; continue-on-error keeps it from blocking the tests.
+      - name: GPU health check
+        if: steps.check.outputs.triggered == 'true' && vars.GPU_HEALTH_CHECK == 'true'
+        continue-on-error: true
+        uses: pantheongpu/gpu-health-check@1913a4746f390e2ae8849173c127954e154d9e5e # v0.1.1
+        with:
+          platform: cuda
+          fail-on: fault
+
       - name: Instantiate
         if: steps.check.outputs.triggered == 'true'
         run: |
@@ -175,6 +186,25 @@ jobs:
           token: ${{secrets.GITHUB_TOKEN}}
           repository: ${{fromJson(steps.request.outputs.data).head.repo.full_name}}
           ref: ${{steps.pr_data.outputs.branch}}
+
+      - name: Put nvcc on PATH for the health check
+        if: steps.check.outputs.triggered == 'true' && vars.GPU_HEALTH_CHECK == 'true'
+        continue-on-error: true
+        run: |
+          source /etc/profile.d/lmod.sh
+          module load nvhpc/26.5
+          dirname "$(command -v nvcc)" >> "$GITHUB_PATH"
+
+      # Optional: stress-test the GPU before trusting it (off unless the repository
+      # variable GPU_HEALTH_CHECK is 'true'). Only a faulty card or a failed check
+      # is reported; continue-on-error keeps it from blocking the tests.
+      - name: GPU health check
+        if: steps.check.outputs.triggered == 'true' && vars.GPU_HEALTH_CHECK == 'true'
+        continue-on-error: true
+        uses: pantheongpu/gpu-health-check@1913a4746f390e2ae8849173c127954e154d9e5e # v0.1.1
+        with:
+          platform: cuda
+          fail-on: fault
 
       - name: Instantiate
         if: steps.check.outputs.triggered == 'true'
